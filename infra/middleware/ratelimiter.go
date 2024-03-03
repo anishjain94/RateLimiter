@@ -3,14 +3,13 @@ package middleware
 import (
 	"net/http"
 	"ratelimit/infra/redis"
-	"ratelimit/util"
 	"time"
 )
 
 func RateLimiterMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		key := "v1/health_127.0.0.1"
+		key := r.URL.Path + "_127.0.0.1"
 		if !RateLimiter.ShouldAllow(key) {
 			http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
 			return
@@ -27,11 +26,14 @@ func GetThrottlingMiddleWare(throttleDuration time.Duration, throttleCount int64
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			redisKey := "RATE_LIMIT_" + r.RemoteAddr
+			redisKey := r.URL.Path + "_127.0.0.1"
 
 			callCount := redis.Incr(redisKey)
 
-			util.ErrorIf(callCount > throttleCount, "RATELIMIT", http.StatusTooManyRequests, "RATE LIMIT ERROR")
+			if callCount >= throttleCount {
+				http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
+			}
+
 			if callCount <= 1 {
 				redis.SetExpiry(&ctx, redisKey, throttleDuration)
 			}

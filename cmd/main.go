@@ -15,7 +15,11 @@ func main() {
 	router := mux.NewRouter().StrictSlash(true)
 
 	middleware.NewRateLimiter(util.CLEANUP_EXPIRY)
-	middleware.AddConfig("v1/health_127.0.0.1", 30, 1*time.Second)
+
+	ip := "127.0.0.1"
+	middleware.AddConfig("/health"+"_"+ip, 20, 1*time.Second)
+	middleware.AddConfig("/info"+"_"+ip, 10, 1*time.Second)
+
 	initializeMiddleware(router)
 
 	InitializeRoutes(router)
@@ -35,14 +39,19 @@ func main() {
 
 func InitializeRoutes(router *mux.Router) {
 	router.HandleFunc("/health", handleHealth).Methods(http.MethodGet)
+	router.HandleFunc("/info", handleInfo).Methods(http.MethodGet)
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode("up and running")
+	json.NewEncoder(w).Encode("Health: up and running")
+}
+
+func handleInfo(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode("Info: up and running")
 }
 
 func initializeMiddleware(router *mux.Router) {
 
 	router.Use(middleware.RateLimiterMiddleware)
-	// router.Use(middleware.GetThrottlingMiddleWare(1*time.Second, 10)) //NOTE: Alternate Approach
+	router.Use(middleware.GetThrottlingMiddleWare(1*time.Second, 10)) //NOTE: Alternate Approach
 }

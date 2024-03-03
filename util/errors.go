@@ -1,9 +1,12 @@
 package util
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func ToError(errorCode string, statusCode int, errorMsg string) {
 	panic(ToErrorString(errorCode, statusCode, errorMsg))
+
 }
 
 func ToErrorString(errorCode string, statusCode int, errorMsg string) string {
