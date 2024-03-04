@@ -2,23 +2,29 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+	"os"
 	"ratelimit/infra/middleware"
 	"ratelimit/util"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 
 	router := mux.NewRouter().StrictSlash(true)
 
 	middleware.NewRateLimiter(util.CLEANUP_EXPIRY)
 
-	ip := "127.0.0.1"
-	middleware.AddConfig("/health"+"_"+ip, 20, 1*time.Second)
-	middleware.AddConfig("/info"+"_"+ip, 10, 1*time.Second)
+	addTestData()
 
 	initializeMiddleware(router)
 
@@ -26,13 +32,12 @@ func main() {
 
 	httpServer := &http.Server{
 		Handler: router,
-		Addr:    "0.0.0.0:8000",
+		Addr:    os.Getenv("DOMAIN") + ":" + os.Getenv("HOST"),
 	}
 
-	err := httpServer.ListenAndServe()
-
+	err = httpServer.ListenAndServe()
 	if err != nil {
-		panic(err.Error())
+		log.Fatal(err.Error())
 	}
 
 }
@@ -53,5 +58,10 @@ func handleInfo(w http.ResponseWriter, r *http.Request) {
 func initializeMiddleware(router *mux.Router) {
 
 	router.Use(middleware.RateLimiterMiddleware)
-	router.Use(middleware.GetThrottlingMiddleWare(1*time.Second, 10)) //NOTE: Alternate Approach
+}
+
+func addTestData() {
+	ip := "127.0.0.1"
+	middleware.AddConfig("/health"+"_"+ip, 20, 1*time.Second)
+	middleware.AddConfig("/info"+"_"+ip, 10, 1*time.Second)
 }

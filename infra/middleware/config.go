@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -107,4 +108,14 @@ func (rateLimit RateLimit) ShouldAllow(key string) bool {
 
 	return false
 
+}
+
+func extractIp(w http.ResponseWriter, request *http.Request) string {
+	ip := request.Header.Get("X-IP")
+
+	if ip == "" {
+		http.Error(w, "Ip missing from header", http.StatusBadRequest)
+	}
+
+	return ip
 }
