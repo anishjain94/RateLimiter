@@ -32,7 +32,7 @@ func main() {
 
 	httpServer := &http.Server{
 		Handler: router,
-		Addr:    os.Getenv("DOMAIN") + ":" + os.Getenv("HOST"),
+		Addr:    os.Getenv("DOMAIN") + ":" + os.Getenv("PORT"),
 	}
 
 	err = httpServer.ListenAndServe()
